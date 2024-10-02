@@ -1,0 +1,1 @@
+<script async src="https://cdn.taboola.com/webpush/publishers/{{PUBLISHER_ID}}/taboola-push-sdk.js"></script>
