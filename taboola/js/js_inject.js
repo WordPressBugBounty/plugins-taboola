@@ -1,80 +1,102 @@
-function insertAfter(newNode, referenceNode) {
-    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-}
-function getElementByXPath(xPath, doc){
-    if(!doc) doc = document;
-    if(doc.evaluate) return doc.evaluate(xPath, document, null, 9, null).singleNodeValue;
-    // for IE
-    while(xPath.charAt(0) == '/') xPath = xPath.substr(1);
-    var prevElem = doc;
-    var arr = xPath.split('/');
-    for(var i=0; i<arr.length; i++){
-        var step = arr[i].split(/(\w*)\[(\d*)\]/gi).filter(function(v){ return !(v==''||v.match(/\s/gi)) },this);
-        var elem = step[0];
-        var elemNum = step[1]?step[1]-1:0; // -1 since xpath is 1 based
-        if(i<arr.length-1) prevElem = prevElem.getElementsByTagName(elem)[elemNum];
-        else return prevElem.getElementsByTagName(elem)[elemNum];
+/*  ────────────────────────────────────────────────────────────────────────────
+    Utility helpers
+    ────────────────────────────────────────────────────────────────────────── */
+
+(function () {
+  'use strict';
+
+  /* ----------  insertAfter  ------------------------------------------------ */
+  /* Fast path for “append” avoids creating a reference to nextSibling.       */
+  function insertAfter(newNode, referenceNode) {
+    const parent = referenceNode.parentNode;
+    if (parent.lastChild === referenceNode) {
+      parent.appendChild(newNode);
+    } else {
+      parent.insertBefore(newNode, referenceNode.nextSibling);
     }
-}
+  }
 
+  /* ----------  getElementByXPath  ----------------------------------------- */
+  /* 1) Use native evaluate where available (all evergreen browsers).         */
+  /* 2) Small, allocation-free fallback for very old IE engines.              */
+  function getElementByXPath(xPath, doc = document) {
+    if (doc.evaluate) {
+      // XPathResult.FIRST_ORDERED_NODE_TYPE = 9
+      return doc.evaluate(
+        xPath,
+        doc,
+        null,
+        9,
+        null
+      ).singleNodeValue;
+    }
 
-/**
- * Copyright (c) Mozilla Foundation http://www.mozilla.org/
- * This code is available under the terms of the MIT License
- */
-if (!Array.prototype.filter) {
-    Array.prototype.filter = function(fun /*, thisp*/) {
-        var len = this.length >>> 0;
-        if (typeof fun != "function") {
-            throw new TypeError();
+    // Fallback (legacy IE) – minimal parsing, no .filter / regex loops
+    xPath = xPath.replace(/^\/+/, ''); // strip leading “/”
+    const steps = xPath.split('/');
+    let current = doc;
+
+    for (let i = 0, l = steps.length; i < l && current; i += 1) {
+      const match = /([^\[\]]+)(?:\[(\d+)\])?/.exec(steps[i]);
+      if (!match) return null;
+      const [, tag, idx] = match;
+      const pos = idx ? (idx - 1) : 0; // XPath indices are 1-based
+      current = current.getElementsByTagName(tag)[pos] || null;
+    }
+    return current;
+  }
+
+  /* ----------  Array.prototype.filter polyfill (unchanged API) ------------ */
+  /* MIT – kept for <= IE8; tightened slightly for speed/readability.         */
+  /* eslint-disable-next-line no-extend-native */
+  if (!Array.prototype.filter) {
+    Array.prototype.filter = function (callback, thisArg) {
+      if (typeof callback !== 'function') throw new TypeError();
+      const out = [];
+      for (let i = 0, l = this.length >>> 0; i < l; i += 1) {
+        if (i in this) {
+          const val = this[i];
+          if (callback.call(thisArg, val, i, this)) out.push(val);
         }
-
-        var res = [];
-        var thisp = arguments[1];
-        for (var i = 0; i < len; i++) {
-            if (i in this) {
-                var val = this[i]; // in case fun mutates this
-                if (fun.call(thisp, val, i, this)) {
-                    res.push(val);
-                }
-            }
-        }
-
-        return res;
+      }
+      return out;
     };
-}
-/* END MIT License code */
+  }
 
-function injectWidgetByXpath(xpath){
+  /* ----------  Injection helpers  ----------------------------------------- */
 
-    var n = getElementByXPath(xpath);
+  function injectWidgetByXpath(xpath) {
+    const anchor =
+      getElementByXPath(xpath) || document.getElementById('tbdefault');
+    if (anchor) innerInject(anchor);
+  }
 
-    // Default placement in case the xpath location is not found
-    if (n==null){
-        n = document.getElementById("tbdefault");
-    }
-    innerInject(n);
-}
+  function injectWidgetByMarker(markerId) {
+    const markerNode = document.getElementById(markerId);
+    if (markerNode && markerNode.parentNode) innerInject(markerNode.parentNode);
+  }
 
-function injectWidgetByMarker(markerId){
-    var markerNode = document.getElementById(markerId);
-    innerInject(markerNode.parentNode);
-}
+  /* One reflow: build everything in a fragment, then insert once.           */
+  function innerInject(node) {
+    if (!node) return;
 
-function innerInject(node){
+    const fragment = document.createDocumentFragment();
+    const container = document.createElement('span');
+    const script = document.createElement('script');
 
-    var c = document.createElement("span");
-    var s = document.createElement("script");
+    /* Keep single quotes – some minifiers mangle this otherwise.            */
+    container.insertAdjacentHTML('beforeend', '{{HTML}}');
+    script.text = "{{SCRIPT}}";
 
-    // Notice that minifier will replce single quotes to double quotes. here it must remain with single quotes
-    var noticeForDeveloper = "if JS crashes here, the first innerHTML value should be enclosed with single quotes instead of double, go to the minified version and change it";
-    c.innerHTML = '{{HTML}}';
-    s.innerHTML = "{{SCRIPT}}";
+    fragment.appendChild(container);
+    fragment.appendChild(script);
+    insertAfter(fragment, node);
+  }
 
-    insertAfter(c,node);
-    insertAfter(s,c);
-}
-
-
-
-
+  /* ----------  Export to global scope (names unchanged) ------------------- */
+  window.insertAfter = insertAfter;
+  window.getElementByXPath = getElementByXPath;
+  window.injectWidgetByXpath = injectWidgetByXpath;
+  window.injectWidgetByMarker = injectWidgetByMarker;
+  window.innerInject = innerInject;
+}());
