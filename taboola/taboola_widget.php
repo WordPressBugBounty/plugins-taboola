@@ -1,161 +1,192 @@
 <?php
 /**
- * Plugin Name: Taboola
- * Plugin URI: https://developers.taboola.com/web-integrations/docs/wordpress-plugin
- * Description: Taboola
- * Version: 2.2.3
- * Author: Taboola
+ * Plugin Name:  Taboola
+ * Plugin URI:   https://developers.taboola.com/web-integrations/docs/wordpress-plugin
+ * Description:  Taboola
+ * Version:      3.0      // ← version bumped
+ * Author:       Taboola
  */
 
-define ("TABOOLA_PLUGIN_VERSION","2.2.3"); // => UPDATE THIS FOR *EVERY* RELEASE (USED FOR TRACKING)
-define ("TABOOLA_MIN_VER","2.2.2"); // => UPDATE THIS *ONLY* IF THIS RELEASE HAS *DB CHANGES*
-define ("TABOOLA_DEBUG_MODE", false); // => SET THIS TO 'FALSE' FOR *EVERY* RELEASE (USED TO SUPRESS DEBUGGING LOGS)
+define( 'TABOOLA_PLUGIN_VERSION', '3.0' );   // track every release
+define( 'TABOOLA_MIN_VER',        '3.0' );   // bump only when DB changes
+define( 'TABOOLA_DEBUG_MODE',      false );
 
-define ("TABOOLA_OPTION_NAME","taboola_plugin_version"); // Note: if this release has DB changes, then the min version will be saved under 'taboola_plugin_version' in 'wp_options'.
+define( 'TABOOLA_OPTION_NAME', 'taboola_plugin_version' );
 
-define ("TABOOLA_XPATH_MARKER","/");
-define ("TABOOLA_JS_INDICATOR","{JS}");
-define ("TABOOLA_JS_MARKER","{");
-define ("TABOOLA_CONTENT_FORMAT_STRING",'string');
-define ("TABOOLA_CONTENT_FORMAT_SCRIPT",'script');
-define ("TABOOLA_CONTENT_FORMAT_HTML",'html');
+define( 'TABOOLA_XPATH_MARKER',  '/' );
+define( 'TABOOLA_JS_INDICATOR',  '{JS}' );
+define( 'TABOOLA_JS_MARKER',     '{'   );
+define( 'TABOOLA_CONTENT_FORMAT_STRING',  'string'  );
+define( 'TABOOLA_CONTENT_FORMAT_SCRIPT',  'script'  );
+define( 'TABOOLA_CONTENT_FORMAT_HTML',    'html'    );
 
+include_once 'widget.php';
+require_once 'JavaScriptWrapper.php';
+require_once plugin_dir_path( __FILE__ ) . 'simple_html_dom.php';   // ← NEW
 
-include_once('widget.php');
-require_once('JavaScriptWrapper.php');
+if ( ! class_exists( 'TaboolaWP' ) ) {
+class TaboolaWP {
 
+    /* ───────────────────────────  properties  ─────────────────────────── */
+    public $data             = [];
+    public $_is_widget_on_page;
+    public $_is_head_script_loaded = false;
 
-if (!class_exists('TaboolaWP')) {
-    class TaboolaWP
-    {
-        //save internal data
-        public $data = array();
-        public $_is_widget_on_page;
-        public $_is_head_script_loaded = false;
-        private $tpl_sw = 'importScripts("https://cdn.taboola.com/webpush/tsw.js");';
-
-        private $msg_sw_error = <<<SWE
-        <p>
-        The file sw.js in the root directory of Wordpress is not writable.
-        Please change its permissions and try again. Otherwise replace its contents manually:
-        </p>
+    private $tpl_sw    = 'importScripts("https://cdn.taboola.com/webpush/tsw.js");';
+    private $msg_sw_error  = <<<SWE
+        <p>The file <code>sw.js</code> in the WP root is not writable.
+        Please change its permissions or paste the code below manually:</p>
         <pre><code>{{SW}}</code></pre>
-        <p>
-        Also make sure that the file is accessible at {{DOMAIN}}/sw.js        
-        </p>
-        SWE;
+        <p>Also make sure it's reachable at <code>{{DOMAIN}}/sw.js</code></p>
+SWE;
 
-        public $plugin_name;
-        public $plugin_directory;
-        public $plugin_url;
-        public $settings;
-        public $tbl_taboola_settings;
+    public  $plugin_name;
+    public  $plugin_directory;
+    public  $plugin_url;
+    public  $settings;
+    public  $tbl_taboola_settings;
 
-        public function __construct()
-        {
-            global $wpdb;
+    /* ───────────────────────────  constructor  ─────────────────────────── */
+    public function __construct() {
+        global $wpdb;
 
-            //initialize plugin constant
-            DEFINE('TaboolaWP', true);
+        define( 'TaboolaWP', true );
 
-            $this->_is_widget_on_page = false;
-            $this->_is_head_script_loaded = false;
+        $this->_is_widget_on_page   = false;
+        $this->_is_head_script_loaded = false;
 
-            $this->plugin_name = plugin_basename(__FILE__);
-            $this->plugin_directory = plugin_dir_path(__FILE__);
-            $this->plugin_url = trailingslashit(WP_PLUGIN_URL . '/' . dirname(plugin_basename(__FILE__)));
-            $this->settings = $wpdb->get_row("select * from ".$wpdb->prefix."_taboola_settings limit 1");
+        $this->plugin_name      = plugin_basename( __FILE__ );
+        $this->plugin_directory = plugin_dir_path( __FILE__ );
+        $this->plugin_url       = trailingslashit(
+            WP_PLUGIN_URL . '/' . dirname( plugin_basename( __FILE__ ) )
+        );
+        $this->tbl_taboola_settings = $wpdb->prefix . '_taboola_settings';
+        $this->settings = $wpdb->get_row(
+            "SELECT * FROM {$this->tbl_taboola_settings} LIMIT 1"
+        );
 
-            $this->tbl_taboola_settings = $wpdb->prefix . '_taboola_settings';
+        /* activation / upgrade */
+        register_activation_hook( $this->plugin_name, [ $this, 'update_db' ] );
+        add_action( 'admin_init',                     [ $this, 'update_db' ] );
 
-            //activation function
-            register_activation_hook($this->plugin_name, array(&$this, 'update_db'));
-            add_action('admin_init', array(&$this, 'update_db'));
+        /* widgets */
+        if ( $this->settings && ! empty( $this->settings->publisher_id ) ) {
+            add_action(
+                'widgets_init',
+                static fn() => register_widget( 'WP_Widget_Taboola' )
+            );
+        }
 
-            // Enable sidebar widgets
-            if ($this->settings != NULL && !empty($this->settings->publisher_id)){
-                //register Taboola widget
-                add_action('widgets_init',
-                    function(){
-                        return register_widget("WP_Widget_Taboola");
-                    }
-                );
-            }
+        /* admin vs front-end hooks */
+        if ( is_admin() ) {
+            add_action( 'admin_menu',        [ $this, 'admin_generate_menu' ] );
+            add_filter( 'plugin_action_links',
+                        [ $this, 'plugin_action_links' ], 10, 2 );
+        } elseif ( $this->settings ) {
+            /* loader & flush */
+            add_action( 'wp_head',    [ $this, 'taboola_header_loader_inject' ] );
+            add_action( 'wp_footer',  [ $this, 'taboola_footer_loader_js'   ] );
 
-            //$this->should_place_tag_outside_of_content = $this->settings->out_of_content_enabled;
+            /* content widgets */
+            add_filter( 'the_content', [ $this, 'load_taboola_content'      ] );
+            add_filter( 'the_content', [ $this, 'load_taboola_content_mid'  ] );
 
-            if (is_admin()) {
-                //add menu for plugin
-                add_action( 'admin_menu', array(&$this, 'admin_generate_menu') );
-                add_filter('plugin_action_links', array(&$this, 'plugin_action_links'), 10, 2 );
-            }elseif ($this->settings != NULL){
-                    add_action('wp_head', array(&$this, 'taboola_header_loader_inject'));
-                    if (!empty($this->settings->publisher_id_push)) {
-                        add_action('wp_head', array(&$this, 'taboola_webpush_loader_js'));
+            /* full-page buffer – home & category */
+            add_action( 'template_redirect', [ $this, 'tb_home_buffer_start' ], 0 );
+            add_action( 'shutdown',          [ $this, 'tb_home_buffer_flush' ], PHP_INT_MAX );
 
-                        $sw = 'sw.js';
-                        $sw_path = ABSPATH . $sw;
-                        
-                        $content = file_exists($sw_path) ? file_get_contents($sw_path) : '';
-                        
-                        if (strpos($content, $this->tpl_sw) === false) {
-                            if (!is_writable(ABSPATH) || (file_exists($sw_path) && !is_writable($sw_path))) {
-                                return $this->notice($this->msg_sw_error);
-                            }
-                            $content = $this->tpl_sw . PHP_EOL . $content;
-                            if (file_put_contents($sw_path, $content) === false) {
-                                return $this->notice($this->msg_sw_error);
-                            }
-                        }
-                    }
-                    add_action('wp_footer', array(&$this, 'taboola_footer_loader_js'));
-                    add_filter('the_content', array(&$this, 'load_taboola_content'));
-                    add_filter('the_content', array(&$this, 'load_taboola_content_mid'));
-                    //add_filter('the_content', array(&$this, 'load_taboola_content_home'));
-                   // add_filter('the_excerpt', array(&$this, 'load_taboola_content_home'));
-                   // Homepage widget – capture the full page, inject once.
-                // Homepage widget – start buffering *before* anything else renders
-                add_action( 'template_redirect', [ $this, 'tb_home_buffer_start' ], 0 );
+            add_action( 'template_redirect', [ $this, 'tb_cat_buffer_start'  ], 0 );
+            add_action( 'shutdown',          [ $this, 'tb_cat_buffer_flush'  ], PHP_INT_MAX );
+        }
+    } // __construct
 
-                    // Homepage widget – flush the buffer *after* literally everything else
-                add_action( 'shutdown',          [ $this, 'tb_home_buffer_flush' ], PHP_INT_MAX );
 
- 
-            }      
-                  
-    }
-    
-                      /* ------------------------------------------------------------------
- * HOMEPAGE WIDGET – full-page buffer
- * ----------------------------------------------------------------*/
+/* ======================================================================
+   CATEGORY ▸ should we show the widget?
+   ====================================================================== */
+private function should_show_content_widget_category(): bool {
+    return (
+        trim( $this->settings->publisher_id ) !== '' &&
+        ( is_category() || is_archive() || is_search() ) &&
+        $this->settings->category_enabled &&
+        trim( $this->settings->category_widget_id ) !== ''
+    );
+}
+
+/* ----------------------------------------------------------------------
+   HOMEPAGE ▸ full-page buffer
+   -------------------------------------------------------------------- */
 public function tb_home_buffer_start() {
-    
-    // Use the plug-in’s own logic to decide if the home widget is enabled
     if ( $this->should_show_content_widget_home() ) {
         ob_start( [ $this, 'tb_home_buffer_inject' ] );
     }
 }
-
 public function tb_home_buffer_inject( $html ) {
-        //error_log( '🟢 Taboola buffer inject ran. HTML length = ' . strlen( $html ) ); // LOG #1
-   // error_log( 'TB-DEBUG ① buffer inject, html len='.strlen($html) );
-
-    /*
-     * load_taboola_content_home() already:
-     *  – reads your saved widget-ID, placement, selector & occurrence
-     *  – builds the HTML + JS
-     *  – calls embed_taboola_content_location_home() to place it
-     */
     return $this->load_taboola_content_home( $html );
 }
 
+/* ----------------------------------------------------------------------
+   CATEGORY ▸ buffer hooks
+   -------------------------------------------------------------------- */
+public function tb_cat_buffer_start() {
+    if ( $this->should_show_content_widget_category() ) {
+        ob_start( [ $this, 'tb_cat_buffer_inject' ] );
+    }
+}
+public function tb_cat_buffer_inject( $html ) {
+    return $this->load_taboola_content_category( $html );
+}
+public function tb_cat_buffer_flush() {
+    if ( ob_get_length() ) {
+        echo ob_get_clean();
+    }
+}
+
+/* ----------------------------------------------------------------------
+   CATEGORY ▸ choose where to inject
+   -------------------------------------------------------------------- */
+private function embed_taboola_content_location_category(
+            string $html,
+            array  $taboola_content,
+            string $selector ) : string {
+
+    $formatted = $this->format_taboola_content_category( $taboola_content );
+
+    /* A.  no selector → bottom of page */
+    if ( $selector === '' ) {
+        return str_ireplace( '</body>', $formatted . '</body>', $html );
+    }
+
+    /* B.  selector given → try server-side injection */
+    $doc = str_get_html( $html );
+    if ( ! $doc ) {
+        // parser failed → graceful fallback
+        return str_ireplace( '</body>', $formatted . '</body>', $html );
+    }
+
+    $occurrence = max( 0, $this->settings->category_location_string_occurrence - 1 );
+    $target     = $doc->find( $selector, $occurrence );
+
+    if ( $target ) {                 // selector found
+        $target->outertext .= $formatted;
+        return (string) $doc;        // done – no duplicate
+    }
+
+    /* C.  selector not found → bottom of page */
+    return str_ireplace( '</body>', $formatted . '</body>', $html );
+}
+
+/* ------------------------------------------------------------------ */
 public function tb_home_buffer_flush() {
     if ( ob_get_length() ) {
         echo ob_get_clean();
     }
 }
 
-        function plugin_action_links($links, $file) {
+
+
+
+function plugin_action_links($links, $file) {
             static $this_plugin;
 
             if (!$this_plugin) {
@@ -179,7 +210,7 @@ public function tb_home_buffer_flush() {
             // PC - only if v2 was installed:
             if (!$this->is_db_updated_for_min_ver("2.0.0"))
                 return false;
-            $retVal1 = ((trim($this->settings->publisher_id) != '') && is_single() && $this->settings->mid_enabled && trim($this->settings->mid_widget_id) != '');
+            $retVal1 = ((trim($this->settings->publisher_id) != '') && is_single() && !empty($this->settings->mid_enabled));
             return $retVal1;
         }
 
@@ -201,7 +232,7 @@ public function tb_home_buffer_flush() {
 
         // Determine if a taboola widget should be added somewhere on the current page (content or sidebar)
         function is_widget_on_page(){
-            return  $this->should_show_content_widget() || $this->should_show_content_widget_mid() || $this->should_show_content_widget_home() || $this->should_show_sidebar_widget();
+            return  $this->should_show_content_widget() || $this->should_show_content_widget_mid() || $this->should_show_content_widget_home() || $this->should_show_sidebar_widget() || $this->should_show_content_widget_category() ;
         }
 
         function get_page_type(){
@@ -288,22 +319,35 @@ public function tb_home_buffer_flush() {
         }
 
         // Mid-article-widget
-        function load_taboola_content_mid($content)
-        {
-            $taboola_content_mid = array();
+        function load_taboola_content_mid($content) {
             if ($this->should_show_content_widget_mid()){
+                $mid_widgets = json_decode($this->settings->mid_widgets ?? '[]');
 
-	                $secondWidgetParams = array('{{WIDGET_ID}}' => $this->settings->mid_widget_id,
-	                    '{{CONTAINER}}' => 'taboola-mid-article-thumbnails',
-	                    '{{PLACEMENT}}' =>  $this->settings->mid_placement);
-                                               
-	                $secondWidgetScript = new JavaScriptWrapper("widgetInjectionScript.js",$secondWidgetParams);
-                    $taboola_content_mid[TABOOLA_CONTENT_FORMAT_HTML][] = "<div id='taboola-mid-article-thumbnails'></div>";
-                    $taboola_content_mid[TABOOLA_CONTENT_FORMAT_SCRIPT][] = $secondWidgetScript;
+                if (is_array($mid_widgets) && !empty($mid_widgets)) {
+                    foreach ($mid_widgets as $index => $widget) {
+                        $container_id = 'taboola-mid-article-thumbnails-' . $index;
+                        
+                        $widgetParams = array(
+                            '{{WIDGET_ID}}' => $widget->widget_id,
+                            '{{CONTAINER}}' => $container_id,
+                            '{{PLACEMENT}}' => $widget->placement
+                        );
 
-                $content = $this->embed_taboola_content_location_mid($content,$taboola_content_mid,trim($this->settings->mid_location_string));
+                        $widgetScript = new JavaScriptWrapper("widgetInjectionScript.js", $widgetParams);
+                        $taboola_content_mid = array(
+                            TABOOLA_CONTENT_FORMAT_HTML   => array("<div id='{$container_id}'></div>"),
+                            TABOOLA_CONTENT_FORMAT_SCRIPT => array($widgetScript),
+                        );
+
+                        $content = $this->embed_taboola_content_location_mid(
+                            $content,
+                            $taboola_content_mid,
+                            $widget->location_string,
+                            $widget->occurrence
+                        );
+                    }
+                }
             }
-
             return $content;
         }
 
@@ -327,6 +371,30 @@ public function tb_home_buffer_flush() {
             return $content;
            
         }
+        /* ------------------------------------------------------------------
+ * CATEGORY  ▸  build widget & inject
+ * ------------------------------------------------------------------*/
+public function load_taboola_content_category( $content ) {
+
+    // 1) Build the DIV that Taboola will fill
+    $taboola[TABOOLA_CONTENT_FORMAT_HTML][] =
+        "<div id='taboola-category-thumbnails'></div>";
+
+    // 2) Build the JS that loads the feed (reuse the wrapper)
+    $taboola[TABOOLA_CONTENT_FORMAT_SCRIPT][] =
+        new JavaScriptWrapper( 'widgetInjectionScript.js', [
+            '{{WIDGET_ID}}' => $this->settings->category_widget_id,
+            '{{CONTAINER}}' => 'taboola-category-thumbnails',
+            '{{PLACEMENT}}' => $this->settings->category_placement,
+        ]);
+
+    // 3) Decide where to insert (selector or end of <body>)
+    return $this->embed_taboola_content_location_category(
+                $content,
+                $taboola,
+                trim( $this->settings->category_location_string )
+           );
+}
 
         // Below-article widget
 
@@ -396,6 +464,16 @@ public function tb_home_buffer_flush() {
         
          }
 
+
+         // ► CATEGORY formatter  ◄
+private function format_taboola_content_category( $arr ) {
+    return implode( "\n", [
+        implode( "\n", $arr[TABOOLA_CONTENT_FORMAT_HTML] ?? [] ),
+        '<script type="text/javascript">' .
+            implode( "\n", $arr[TABOOLA_CONTENT_FORMAT_SCRIPT] ?? [] ) .
+        '</script>',
+    ]);
+}
         // Below-article widget
         // Do the actual logic of choosing where to place the taboola content.
         function embed_taboola_content_location($content, $taboola_content){
@@ -423,7 +501,7 @@ public function tb_home_buffer_flush() {
 
         // Mid-article widget
         // Do the actual logic of choosing where to place the taboola content based on the "location" attribute        
-        function embed_taboola_content_location_mid($content, $taboola_content_mid, $location){
+        function embed_taboola_content_location_mid($content, $taboola_content_mid, $location, $occurrence = 1){
             $do_default = true;
 
             if (isset($location) && $location != ''){
@@ -452,7 +530,7 @@ public function tb_home_buffer_flush() {
                     require_once('simple_html_dom.php');
 
                     $html_doc = str_get_html($content);
-                    $target_location = $html_doc->find($location,($this->settings->mid_location_string_occurrence)-1);
+                    $target_location = $html_doc->find($location, ($occurrence) - 1);
 
                     // if the location was found within the html content
                     if (isset($target_location) && is_object($target_location)){
@@ -464,10 +542,6 @@ public function tb_home_buffer_flush() {
                     }
                 }
             }
-            // Default for below-article widget - add to the end of the content
-            // if ($do_default){
-            //     $content = $content.$this->format_taboola_content_mid($taboola_content_mid,TABOOLA_CONTENT_FORMAT_STRING);
-            // }
 
             return $content;
         }
@@ -570,31 +644,16 @@ public function tb_home_buffer_flush() {
                 }
 
                 if(isset($_POST['mid_enabled'])) {
-                    if (trim(strip_tags($_POST['mid_widget_id'])) == '') {
-                        $taboola_errors[] = "Mid-article > Widget ID";
-                    }
-                    if (trim(strip_tags($_POST['mid_placement'])) == '') {
-                        $taboola_errors[] = "Mid-article > Placement Name";
-                    }
-                    if (trim(strip_tags($_POST['mid_location_string'])) == '') {
-                        $taboola_errors[] = "Mid-article > CSS selector";
-                    }
-                    else {
-                        // If the 'location' WAS filled in, then...
-
-                        // 1) Check for a valid 'location':
-
-                        // Validation method has not been implemented
-                        // mid_if  (!$this->is_locaton_string_valid1($_POST['mid_location_string'])) {
-                        //     $taboola_errors[] = "Mid-article > CSS Selector (invalid value)";
-                        // }
-
-                        // 2) Validate the 'occurrence':
-                        if (!$this->is_mid_location_string_occurrence_valid($_POST['mid_location_string_occurrence'])) {
-                            $taboola_errors[] = "Mid-article > Occurance (must be >= 1)";
+                    if(isset($_POST['mid_widget_id']) && is_array($_POST['mid_widget_id'])) {
+                        foreach ($_POST['mid_widget_id'] as $index => $widget_id) {
+                            if(trim($widget_id) == '') {
+                                $taboola_errors[] = "Mid-article Widget #".($index + 1)." > Widget ID";
+                            }
+                            if(trim($_POST['mid_placement'][$index]) == '') {
+                                $taboola_errors[] = "Mid-article Widget #".($index + 1)." > Placement Name";
+                            }
                         }
                     }
-
                 }
 
                 if(isset($_POST['home_enabled'])) {
@@ -609,23 +668,43 @@ public function tb_home_buffer_flush() {
                         $taboola_errors[] = "Homepage > CSS selector";
                     }
                     else {
-                        // If the 'location' WAS filled in, then...
-
-                        // 1) Check for a valid 'location':
-
-                        // Validation method has not been implemented
-                        // if (!$this->is_home_location_string_valid($_POST['home_location_string'])) {
-                        //     $taboola_errors[] = "Homepage > CSS Selector (invalid value)";
-                        // }                    
-
-                        // 2) Validate the 'occurrence':
                         if (!empty($_POST['home_location_string']) && !$this->is_home_location_string_occurrence_valid($_POST['home_location_string_occurrence'])) {
                             $taboola_errors[] = "Homepage > Occurance (must be >= 1)";
                         }
                     }
-                }        
+                }     
+                if ( isset($_POST['category_enabled']) ) {
+                    if ( trim(strip_tags($_POST['category_widget_id'])) == '' )
+                        $taboola_errors[] = "Category > Widget ID";
+                    if ( trim(strip_tags($_POST['category_placement'])) == '' )
+                        $taboola_errors[] = "Category > Placement Name";
+                }   
                 
                 if(count($taboola_errors) == 0){
+                    
+                    $mid_widgets_data = array();
+                    if (isset($_POST['mid_widget_id']) && is_array($_POST['mid_widget_id'])) {
+                        foreach ($_POST['mid_widget_id'] as $index => $widget_id) {
+                            if (!empty(trim($widget_id))) {
+                                
+                                $location_string = 'p'; 
+                                if (isset($_POST['mid_paragraph_ui_mode'][$index]) && $_POST['mid_paragraph_ui_mode'][$index] === 'Other') {
+                                    if (isset($_POST['mid_location_string'][$index])) {
+                                        $location_string = sanitize_text_field($_POST['mid_location_string'][$index]);
+                                    }
+                                }
+
+                                $mid_widgets_data[] = array(
+                                    'widget_id'       => sanitize_text_field($widget_id),
+                                    'placement'       => sanitize_text_field($_POST['mid_placement'][$index]),
+                                    'location_string' => $location_string,
+                                    'occurrence'      => intval($_POST['mid_location_string_occurrence'][$index]),
+                                );
+                            }
+                        }
+                    }
+                    $mid_widgets_json = json_encode($mid_widgets_data);
+
                     $data = array(
                         "publisher_id" => trim($_POST['publisher_id']),
 
@@ -639,22 +718,21 @@ public function tb_home_buffer_flush() {
                         "out_of_content_enabled" => isset($_POST['out_of_content_enabled']) ? true : false,
 
                         "mid_enabled" => isset($_POST['mid_enabled']) ? true : false,
-                        "mid_widget_id" => !empty($_POST['mid_widget_id']) ? trim($_POST['mid_widget_id']) : '',
-                        "mid_placement" => !empty($_POST['mid_placement']) ? trim($_POST['mid_placement']) : '',
-                        "mid_paragraph_ui_mode" => !empty($_POST['mid_paragraph_ui_mode']) ? trim($_POST['mid_paragraph_ui_mode']) : '',
-
-                        "mid_location_string_occurrence" => !empty($_POST['mid_location_string_occurrence']) ? $_POST['mid_location_string_occurrence'] : '',
-                        "mid_location_string" => !empty($_POST['mid_location_string']) ? trim($_POST['mid_location_string']) : '',
-
+                        "mid_widgets" => $mid_widgets_json,
+                        
                         "home_enabled" => isset($_POST['home_enabled']) ? true : false,
                         "home_widget_id" => !empty($_POST['home_widget_id']) ? trim($_POST['home_widget_id']) : '',
                         "home_placement" => !empty($_POST['home_placement']) ? trim($_POST['home_placement']) : '',
 
                         "home_location_string_occurrence" => !empty($_POST['home_location_string_occurrence']) ? $_POST['home_location_string_occurrence'] : '',
-                        "home_location_string" => !empty($_POST['home_location_string']) ? trim($_POST['home_location_string']) : ''
-                    );
+                        "home_location_string" => !empty($_POST['home_location_string']) ? trim($_POST['home_location_string']) : '',
+                        "category_enabled"                    => isset($_POST['category_enabled']) ? true  : false,
+                        "category_widget_id"                  => !empty($_POST['category_widget_id']) ? trim($_POST['category_widget_id']) : '',
+                        "category_placement"                  => !empty($_POST['category_placement']) ? trim($_POST['category_placement']) : '',
+                        "category_location_string_occurrence" => !empty($_POST['category_location_string_occurrence']) ? $_POST['category_location_string_occurrence'] : '',
+                        "category_location_string"            => !empty($_POST['category_location_string']) ? trim($_POST['category_location_string']) : '',
 
-                    //var_dump($settings);
+                    );
 
                     $is_valid_nonce = false;
 
@@ -664,7 +742,7 @@ public function tb_home_buffer_flush() {
 
                     if ($is_valid_nonce) {
                         if($settings == NULL){
-                            $wpdb->insert($this->tbl_taboola_settings, $data, null, null);
+                            $wpdb->insert($this->tbl_taboola_settings, $data);
                         } else {
                             $wpdb->update($this->tbl_taboola_settings, $data, array('id' => $settings->id));
                         }
@@ -731,19 +809,7 @@ public function tb_home_buffer_flush() {
         }
 
         function is_db_updated_for_min_ver($min_ver) {
-            /**
-             * Checks if the DB was *previously* updated for the minimum version specified.
-             * $min_ver should be passed in a format like this: "2.1.0"
-             */
-
             global $wpdb;
-
-            // PC - Temporary patch for v2.1.0
-
-            // START patch ===============================================
-            // Check if the `_taboola` table exists.
-            // If not, then return false.
-
             $table_name = $wpdb->prefix . "_taboola_settings";
 
             if($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
@@ -753,53 +819,29 @@ public function tb_home_buffer_flush() {
             else {
                 tb_write_log("Table EXISTS");
             }
-            // END patch =================================================
-
-            // Check the saved version in wp_options. Default to '1.0.0' if the option is not found.
             $saved_version = get_option(TABOOLA_OPTION_NAME, '1.0.0');
             
             $db_is_up_to_date = version_compare($saved_version, $min_ver, '>=');
-            //tb_write_log($db_is_up_to_date);
             return $db_is_up_to_date;
   
         }          
       
         function is_db_updated_for_current_ver() {
-            /** 
-             * DEPRECATED
-             * Checks if the DB was *previously* updated for the version currently loaded.
-            */
             global $wpdb;
-
-            // Check the saved version in wp_options. Default to '1.0.0' if the option is not found.
             $saved_version = get_option(TABOOLA_OPTION_NAME, '1.0.0');
-            
-            // Get the currently loaded plugin version.
             $plugin_version = $this->get_loaded_plugin_version();
-
             $db_is_up_to_date = version_compare($saved_version, $plugin_version, '>=');
-            //tb_write_log($db_is_up_to_date);
             return $db_is_up_to_date;
-  
         }        
 
         function get_loaded_plugin_version() {
-
-            $plugin_data = get_plugin_data( __FILE__ ); // Can be invoked from Admin page only
+            $plugin_data = get_plugin_data( __FILE__ ); 
             $loaded_plugin_version = $plugin_data['Version'];
             return $loaded_plugin_version;
-
         }
 
         function save_taboola_version($min_ver) {
-            /**
-             *  Checks for the saved version in wp_options. 
-             *  If not found - adds it. Else - updates it.
-             */
-            
-
             tb_write_log("SAVING NEW MIN VERSION: " . $min_ver); // PC
-
             $saved_version = get_option(TABOOLA_OPTION_NAME, '');
             if ($saved_version == '') {
                 add_option(TABOOLA_OPTION_NAME, $min_ver);
@@ -810,10 +852,7 @@ public function tb_home_buffer_flush() {
         }
 
         function update_db(){
-            
-            // If we are up to date, then skip this method...
             if ($this->is_db_updated_for_min_ver(TABOOLA_MIN_VER)) {
-                //tb_write_log("All up to date!");
                 return;
             }
             
@@ -822,22 +861,15 @@ public function tb_home_buffer_flush() {
             global $wpdb;
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             
-
-            // Handling for older MySQL versions
-            if (function_exists('mysql_get_server_info') && version_compare(mysql_get_server_info(), '4.1.0', '>=')) {
-                if (!empty($wpdb->charset))
-                    $charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
-                if (!empty($wpdb->collate))
-                    $charset_collate .= " COLLATE $wpdb->collate";
+            $charset_collate = '';
+            if ( ! empty( $wpdb->charset ) ) {
+                $charset_collate = "DEFAULT CHARACTER SET {$wpdb->charset}";
+            }
+            if ( ! empty( $wpdb->collate ) ) {
+                $charset_collate .= " COLLATE {$wpdb->collate}";
             }
 
-            // Check if this is an upgrade from v1
             $is_upgrade_from_v1 = $this->is_upgrade_from_v1();
-
-            // tb_write_log("Is upgrade from v1: " . ($is_upgrade_from_v1 ? 'true' : 'false'));
-
-
-            //settings table structure
             $sql_table_settings = "
                 CREATE TABLE `" . $wpdb->prefix . "_taboola_settings` (
                     `id` INT NOT NULL AUTO_INCREMENT ,
@@ -847,29 +879,21 @@ public function tb_home_buffer_flush() {
                     `first_bc_enabled` TINYINT(1) NOT NULL DEFAULT FALSE,
                     `first_bc_widget_id` VARCHAR(255) DEFAULT NULL,
                     `first_bc_placement` VARCHAR(255) DEFAULT " . ($is_upgrade_from_v1 ? "'below-article'" : "NULL") .",
-                    `first_bc_custom_css` TEXT DEFAULT NULL,
-                    `second_bc_enabled` TINYINT(1) NOT NULL DEFAULT FALSE,
-                    `second_bc_widget_id` VARCHAR(255) DEFAULT NULL,
-                    `second_bc_custom_css` TEXT DEFAULT NULL,
-                    `location_string` TEXT DEFAULT NULL,
-                    `mid_enabled` TINYINT(1) NOT NULL DEFAULT FALSE,
-                    `mid_widget_id` VARCHAR(255) DEFAULT NULL,
-                    `mid_placement` VARCHAR(255) DEFAULT NULL,
                     `out_of_content_enabled` TINYINT(1) NOT NULL DEFAULT TRUE,
-                    `mid_location_string` TEXT DEFAULT NULL,
-                    `mid_location_string_occurrence` SMALLINT DEFAULT NULL,
-                    `mid_paragraph_ui_mode` VARCHAR(255) DEFAULT NULL,
+                    `mid_enabled` TINYINT(1) NOT NULL DEFAULT FALSE,
+                    `mid_widgets` TEXT DEFAULT NULL,
                     `home_enabled` TINYINT(1) NOT NULL DEFAULT FALSE,
                     `home_widget_id` VARCHAR(255) DEFAULT NULL,
                     `home_placement` VARCHAR(255) DEFAULT NULL,
                     `home_location_string` TEXT DEFAULT NULL,
                     `home_location_string_occurrence` SMALLINT DEFAULT NULL,
+                    `category_enabled`               TINYINT(1)  NOT NULL DEFAULT FALSE,
+                    `category_widget_id`             VARCHAR(255) DEFAULT NULL,
+                    `category_placement`             VARCHAR(255) DEFAULT NULL,
+                    `category_location_string`       TEXT         DEFAULT NULL,
+                    `category_location_string_occurrence` SMALLINT DEFAULT NULL,
                     PRIMARY KEY (`id`)
-                )" . $charset_collate . ";";
-                
-                // tb_write_log($sql_table_settings);
-
-                // create/update the table
+                ) $charset_collate;";
                 dbDelta($sql_table_settings);
         }
     }
@@ -878,17 +902,9 @@ public function tb_home_buffer_flush() {
 global $taboolaWP;
 $taboolaWP = new TaboolaWP();
 
-/*
-A few utility methods for logging
-*/
-
-// Writes debugging messages to 'logs/debug.log'.
-// The exact file location depends on *where* you trigger the function.
-// In this script, we trigger the function from the admin dashboard.
-// So the log file is located under 'wp-admin/logs'.
 function tb_write_log($log_msg)
 {
-    if (!TABOOLA_DEBUG_MODE) // If not debug mode, do nothing
+    if (!TABOOLA_DEBUG_MODE) 
         return;
        
     $log_filename = "logs";
@@ -898,14 +914,12 @@ function tb_write_log($log_msg)
     }
     $log_file_data = $log_filename.'/debug.log';
 
-    // Add date/time
      $date = date('Y-m-d H:i:s');
     $log_msg_with_date = $date." : ".$log_msg;
 
     file_put_contents($log_file_data, $log_msg_with_date . "\n", FILE_APPEND);
 }
 
-// Write to console
 function tb_console_log( $data ){
 
     If(wp_get_environment_type() === 'development') {
@@ -917,23 +931,20 @@ function tb_console_log( $data ){
     }
 }
 
-// Write to webpage and stop
 function tb_print_to_page($data) {
     If(wp_get_environment_type() === 'development') {
         print_r($data);
         die;
     }
 }
-//
 
-// Enqueue js_inject.min.js script for XPath injection
 function enqueue_taboola_scripts() {
     wp_register_script(
         'taboola-injector',
         plugins_url('js/js_inject.min.js', __FILE__),
-        array(), // No dependencies
-        null,    // No version specified
-        true     // Load in footer
+        array(), 
+        null,    
+        true     
     );
 
     wp_enqueue_script('taboola-injector');

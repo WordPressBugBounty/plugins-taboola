@@ -1,4 +1,3 @@
-<!-- Latest font-awesome include-->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
@@ -21,9 +20,7 @@
         <a href="#tab2" class="nav-tab" id="tab2-link">Web Push</a>
     </h2>
 
-<!-- errors/success message -->
-
-    <?php
+<?php
     if($_SERVER['REQUEST_METHOD'] == 'POST' && count($taboola_errors) == 0){
         echo "<div class='label-success'>";
         echo "<h3 style='color:green;'>Changes applied!</h3>";
@@ -48,25 +45,13 @@
 
 <script>
     function setEnabledDisabled(divID, chkToggle) {
-        /*
-            JS function for form.
-            Enables/disables fields for the given section ('divID'), depending on whether 'chkToggle' is checked.
-        */
-
         var applyColor = (chkToggle.checked ? "#000" : "#666");
-
-        // Set all labels in that section ('divID') to the relevant color.
         $(divID).find("label").css("color", applyColor);
-
-        // Disable (/enable) all input fields in that section ('divID'), except for 'chkToggle'.
-        // Once done, apply a gray border color.
         $(divID).find("input").not("#" + chkToggle.id).prop("disabled", !chkToggle.checked).css("borderColor", "#ccc");
         $(divID).find("select").not("#" + chkToggle.id).prop("disabled", !chkToggle.checked).css("borderColor", "#ccc");
-
     }
 </script>
 
-<!-- tab-switching JQuery -->
 <script>
 jQuery(document).ready(function($) {
     function showTab(tabId) {
@@ -77,7 +62,6 @@ jQuery(document).ready(function($) {
         $(tabId).addClass('active').show();
     }
 
-    // On tab click, update the URL hash and hidden input value
     $('.nav-tab').click(function(e) {
         e.preventDefault();
         var tabId = $(this).attr('href');
@@ -86,7 +70,6 @@ jQuery(document).ready(function($) {
         showTab(tabId);
     });
 
-    // On page load, show the tab from the URL hash or default to the first tab
     var hash = window.location.hash;
     if (hash) {
         showTab(hash);
@@ -95,7 +78,6 @@ jQuery(document).ready(function($) {
         showTab('#tab1');
     }
 
-    // Set the active tab before form submission
     $('form').submit(function() {
         var activeTab = $('.nav-tab.nav-tab-active').attr('href');
         $('#active_tab').val(activeTab);
@@ -105,11 +87,6 @@ jQuery(document).ready(function($) {
 
 <script> 
 $(document).ready(function(){
-    // On page load:
-    if ($('#mid_paragraph_ui_mode').val() == 'Other') {
-        $("#mid_css_selector_div").show();
-    }
-
     if ($('#home_enabled').prop("checked") === true) {
         $("#homepage").show();
         var ad = $('#show-advanced-settings');
@@ -120,7 +97,6 @@ $(document).ready(function(){
 
 <script> 
 $(document).ready(function(){
- // On clicking 'Advanced settings'
     $("#show-advanced-settings").click(function() {
         $("#homepage").slideToggle("fast");
         var ad = $('#show-advanced-settings');
@@ -129,39 +105,7 @@ $(document).ready(function(){
 });
 </script>
 
-
-<script>
-$(document).ready(function(){
-
-    // On selecting an item in the dropdown:
-    $('#mid_paragraph_ui_mode').on('change', function(e){
-        e.preventDefault();
-        if ( this.value == 'Other')
-        {
-            $("#mid_css_selector_div").show();
-
-            // Highlight relevant fields:
-            $("#mid_location_string, #mid_occurrence").addClass('highlight');
-            setTimeout(() => $("#mid_occurrence, #mid_location_string").removeClass('highlight'), 1500);
-            
-        }
-        else
-        {
-            $("#mid_location_string").val("p"); // Set it back to the default value of 'p'
-            $("#mid_css_selector_div").hide();
-
-            // Highlight the 'occurrence' field:
-            $("#mid_occurrence").addClass('highlight');
-            setTimeout(() => $("#mid_occurrence").removeClass('highlight'), 1000);            
-        }
-    });
-});
-</script> 
-
-
-<!-- Welcome Massage -->
-
-    <div class="publisher_welcome_massage">
+<div class="publisher_welcome_massage">
         <h2 class="welcome_heading">Welcome to Taboola WordPress Plugin</h2>
         <p class="first_p">For detailed instructions, see the <a href="https://developers.taboola.com/web-integrations/docs/wordpress-plugin-managing-placements" target='_blank'>Taboola Dev Center.</a></p>
         <p class="second_p"><b>Stuck? Need a hand?</b> Feel free to reach out via our <a href="https://developers.taboola.com/web-integrations/discuss" target='_blank'>Online Community</a>.</p>
@@ -170,14 +114,13 @@ $(document).ready(function(){
         </div>
     </div>
 
-<!--  Welcome Massage-->
-
 <form method="POST">
 <?php
-    // Generate a nonce and pass it via a hidden field
     $my_nonce = wp_create_nonce( 'my_plugin_update_field_action' );
 ?>
 <input type="hidden" name="my_plugin_nonce" value="<?php echo esc_attr( $my_nonce ); ?>"/>
+<input type="hidden" id="active_tab" name="active_tab" value="#tab1"/>
+
 
 <div id="tab1" class="tab-content">
             <h2 class="general_h2">General Settings</h2>
@@ -185,13 +128,10 @@ $(document).ready(function(){
             <div class="settings_block">
                 <div class="style_box1"><label id="pub_id">Publisher ID :</label>
                 <div class="tooltip">
-                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
-                        <!-- <img class="helpTooltip__icon___1XWGN" src='<?php echo $this->plugin_url.'img/tooltip_image.svg' ?>'/> -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN_first">
                                 <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                             </g>
                         </svg>
-                        <!-- <div id="arrow" ></div> -->
                         <div>Your Publisher ID, as provided by Taboola.</div>
                     </div>
                 </div>
@@ -205,8 +145,7 @@ $(document).ready(function(){
                 </div>
             </div>
 
-    <!-- Below Article Widget -->
-        <h2 class="widget_h2">Taboola Units</h2>
+    <h2 class="widget_h2">Taboola Units</h2>
         <div id="below_article" class="settings_block widget_settings_block">
             <div class="switch_style">
                 <label class="switch">
@@ -219,7 +158,6 @@ $(document).ready(function(){
                 <div class="mode_style">
                 <label id="first_bc_widget_id_label" style="float:left;">Mode (Widget ID):</label>
                 <div class="tooltip">
-                    <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                     <g fill="none" fill-rule="evenodd">
                         <path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
@@ -231,7 +169,6 @@ $(document).ready(function(){
                 <div class="placement_style">
                 <label id="first_bc_placement_label" style="float:left;">Placement Name:</label>
                 <div class='tooltip'>
-                    <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                     <g fill="none" fill-rule="evenodd">
                         <path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
@@ -252,9 +189,6 @@ $(document).ready(function(){
                 <input type="text" id="first_bc_placement" value="<?php echo !empty($settings->first_bc_placement) ? strip_tags($settings->first_bc_placement) : "" ?>" name="first_bc_placement" placeholder="Placement Name" />
                 </div>
             </div>
-
-            <!-- Below Article Widget -->
-            <!-- Advanced Settings -->
             <br />
             <div class='location_section'>
                 <div class='checkbox_read'>
@@ -274,101 +208,59 @@ $(document).ready(function(){
                 </div>
             </div>
             </div>
-    <!-- Advanced Settings -->
-
-    <!-- Mid Article Widget -->
 
     <div id="mid_article" class="settings_block widget_settings_block">
-                <div class="switch_style">
-                    <label class="switch">
-                    <input id="mid_enabled" type="checkbox" <?php echo !empty($settings->mid_enabled) ? "checked='checked'" : "" ?> onclick="setEnabledDisabled('#mid_article', this)" name="mid_enabled"/>
-                        <span class="slider round"></span>
-                    </label>
-                    <b style="font-size:15px;">Mid-article</b>
-                </div>
-
-                <div>
-                    <div class="mode_style_mid"><label id="mid_widget_id_label" style="float:left;">Mode (Widget ID):</label>
-                        <div class='tooltip'>
-                            <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
-                                    <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
-                                </g>
-                            </svg>
-                            <div>Your <i>mid-article</i> Mode (Widget ID), as provided by Taboola.</div>
-                        </div>
-                    </div>
-                    <div class="placement_style_mid"><label id="mid_placement_label" style="float:left;">Placement Name:</label>
-                        <div class='tooltip'>
-                            <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
-                                    <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
-                                </g>
-                            </svg>
-                            <div>Your <i>mid-article</i> Placement Name, as provided by Taboola.</div>            
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="widget_below_mid">
-                        <input id="mid_widget_id" type="text" value="<?php echo !empty($settings->mid_widget_id) ? strip_tags($settings->mid_widget_id) : "" ?>" name="mid_widget_id" placeholder="Widget ID" />
-                    </div>
-                    <div class="placement_below_mid">
-                        <input id = "mid_placement" type="text" value="<?php echo !empty($settings->mid_placement) ? strip_tags($settings->mid_placement) : "" ?>" name="mid_placement" placeholder="Placement Name" />
-                    </div>
-                </div>
-
-                <div id="mid_occurrence_div">
-                    <div class="mode_style_mid_selector"><label id="mid_location_string_label" style="float:left;">Position the widget below:</label>
-                        <div class='tooltip'>
-                            <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
-                                    <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
-                                    </g>
-                            </svg>
-                            <div>
-                                Enter the paragraph number to target. <br>
-                                E.g. To target the <b>5th</b> paragraph, fill in <i>5</i>.<br><br>
-                                ----<br>
-                                <i>Advanced</i> - to use a <b>custom</b> selector:<br><br>
-                                1) Choose 'Other'. <br>
-                                2) Fill in a selector (<i>right</i>), and an occurrence (<i>left</i>).
-                            </div>
-                        </div>
-                    </div>
-                    <div class="placement_below_mid_occurrence">
-                        <select name="mid_paragraph_ui_mode" id="mid_paragraph_ui_mode">
-                            <option value="Paragraph" <?php echo (!empty($settings->mid_paragraph_ui_mode) && $settings->mid_paragraph_ui_mode == "Paragraph") ? "selected" : ""?> >Paragraph</option>
-                            <option value="Other" <?php echo (!empty($settings->mid_paragraph_ui_mode) && $settings->mid_paragraph_ui_mode == "Other") ? "selected" : ""?>>Other</option>
-                        </select>&nbsp;
-                        <input type="number" id="mid_occurrence" value="<?php echo !empty($settings->mid_location_string_occurrence) ? $settings->mid_location_string_occurrence : "1" ?>" name="mid_location_string_occurrence" placeholder="" style="width:65px;">
-                    </div>
-
-                </div>
-                <div id="mid_css_selector_div">
-
-                    <div class="placement_style_mid_occurrence"><label id="mid_occurrence_label" style="float:left;">CSS selector :</label>
-                        <div class='tooltip'>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
-                                    <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
-                                    </g>
-                            </svg>
-                            <div>
-                                <i>Advanced</i> - fill in a selector to target - e.g.:<br><br>
-                                <i>#my-id</i> - to target an <i>ID</i> of "my-id".<br>
-                                <i>.my-class</i> - to target a <i>class</i> of "my-class".
-                            </div>
-                        </div>
-                    </div>
-                    <div class="widget_below_mid_selector">
-                        <input id = "mid_location_string" type="text" value="<?php echo !empty($settings->mid_location_string) ? strip_tags($settings->mid_location_string) : "p" ?>" name="mid_location_string" placeholder="E.g. p for paragraph" />
-                    </div>
-                </div>
+        <div class="switch_style">
+            <label class="switch">
+                <input id="mid_enabled" type="checkbox" <?php echo !empty($settings->mid_enabled) ? "checked='checked'" : "" ?> onclick="setEnabledDisabled('#mid_article', this)" name="mid_enabled"/>
+                <span class="slider round"></span>
+            </label>
+            <b style="font-size:15px;">Mid-article</b>
         </div>
-    <!-- Mid Article Widget -->
 
-    <!-- Right Rail Article Widget -->
-
+        <div id="mid-article-widgets-container">
+            <?php
+            $mid_widgets = !empty($settings->mid_widgets) ? json_decode($settings->mid_widgets) : array();
+            if (empty($mid_widgets)) {
+                $mid_widgets = array(new stdClass());
+            }
+            foreach ($mid_widgets as $index => $widget) {
+            ?>
+            <div class="mid-article-widget" style="border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px;">
+                <h4 style="font-size: 14px; font-weight: bold;">Mid-Article Widget #<?php echo $index + 1; ?></h4>
+                <div style="display: flex; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px; padding-right: 10px;">
+                        <label>Mode (Widget ID):</label>
+                        <input class="widefat" type="text" name="mid_widget_id[]" value="<?php echo esc_attr($widget->widget_id ?? ''); ?>" placeholder="thumbnails-mid1" />
+                    </div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <label>Placement Name:</label>
+                        <input class="widefat" type="text" name="mid_placement[]" value="<?php echo esc_attr($widget->placement ?? ''); ?>" placeholder="Mid Article Thumbnails" />
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; margin-top: 10px;">
+                    <div style="flex: 1; min-width: 200px; padding-right: 10px;">
+                        <label>Position below:</label>
+                        <select class="widefat mid-widget-type-selector" name="mid_paragraph_ui_mode[]">
+                            <option value="Paragraph" <?php echo !isset($widget->location_string) || $widget->location_string === 'p' ? 'selected' : ''; ?>>Paragraph</option>
+                            <option value="Other" <?php echo isset($widget->location_string) && $widget->location_string !== 'p' ? 'selected' : ''; ?>>Other (Custom)</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px; padding-right: 10px;" class="mid-css-selector-container">
+                        <label>CSS selector:</label>
+                        <input class="widefat" type="text" name="mid_location_string[]" value="<?php echo esc_attr($widget->location_string ?? 'p'); ?>" />
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label>Paragraph/Element Number:</label>
+                        <input class="widefat" type="number" name="mid_location_string_occurrence[]" value="<?php echo esc_attr($widget->occurrence ?? '1'); ?>" min="1" style="width:80px;">
+                    </div>
+                </div>
+                <button type="button" class="button remove-mid-widget" style="margin-top: 10px;">Remove Widget</button>
+            </div>
+            <?php } ?>
+        </div>
+        <button type="button" id="add-mid-widget" class="button button-primary" style="margin-top: 15px;">+ Add Another Mid-Article Widget</button>
+    </div>
     <div id="right-rail" class="settings_block widget_settings_block">
         <label id="right-rail-label"><b style="font-size:15px;margin-left: 10px;">Right-rail (sidebar)</b> </label>
         <div style="font-size:14px;margin: 5px 10px 10px 10px;">You can insert a <b>Taboola</b> unit in your website <b>sidebar</b> (if your <b>WordPress</b> theme provides one):</div>
@@ -384,11 +276,75 @@ $(document).ready(function(){
             To <b>watch a demo</b> of the above steps, see our <a href="https://developers.taboola.com/web-integrations/docs/sidebar-widget" target="_blank">online docs</a>.
         </div>
     </div>
+<div id="category_widget" class="settings_block widget_settings_block">
+    <div class="switch_style">
+        <label class="switch">
+            <input id="category_enabled"
+                   type="checkbox"
+                   <?php echo !empty($settings->category_enabled) ? "checked='checked'" : "" ?>
+                   onclick="setEnabledDisabled('#category_widget', this)"
+                   name="category_enabled"/>
+            <span class="slider round"></span>
+        </label>
+        <b style="font-size:15px;">Category (Section Page)</b>
+        <div class='tooltip'>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+       viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+    <g fill="none" fill-rule="evenodd">
+      <path fill="currentColor"
+        d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+    </g>
+  </svg>
+  <div>Settings will be applied to all Category/Section archive pages on your site.</div>
+</div>
 
-<!-- Right Rail Article Widget -->
+    </div>
 
-<!-- Homepage mid widget -->
+    <div class="label_below">
+        <div class="mode_style">
+            <label id="category_widget_id_label" style="float:left;">Mode&nbsp;(Widget&nbsp;ID):</label>
+        </div>
+        <div class="placement_style">
+            <label id="category_placement_label" style="float:left;">Placement&nbsp;Name:</label>
+        </div>
+    </div>
 
+    <div class="input_below">
+        <div class="widget_below">
+            <input id="category_widget_id" type="text"
+                   value="<?php echo !empty($settings->category_widget_id) ? strip_tags($settings->category_widget_id) : '' ?>"
+                   name="category_widget_id" placeholder="Widget ID"/>
+        </div>
+        <div class="placement_below">
+            <input id="category_placement" type="text"
+                   value="<?php echo !empty($settings->category_placement) ? strip_tags($settings->category_placement) : '' ?>"
+                   name="category_placement" placeholder="Placement Name"/>
+        </div>
+    </div>
+
+    <div class="home_occurrence">
+        <div class="mode_style_home_selector">
+            <label id="category_location_string_label" style="float:left;">CSS selector&nbsp;:</label>
+        </div>
+        <div class="placement_style_home_occurrence">
+            <label id="category_occurrence_label" style="float:left;">Occurrence&nbsp;:</label>
+        </div>
+    </div>
+
+    <div class="home_placement">
+        <div class="widget_below_home_selector">
+            <input id="category_location_string" type="text"
+                   value="<?php echo !empty($settings->category_location_string) ? strip_tags($settings->category_location_string) : '' ?>"
+                   name="category_location_string" placeholder="e.g. #content"/>
+        </div>
+        <div class="placement_below_home_Occurrence">
+            <input id="category_occurrence" type="number" min="1"
+                   value="<?php echo !empty($settings->category_location_string_occurrence) ? $settings->category_location_string_occurrence : '1' ?>"
+                   name="category_location_string_occurrence"
+                   style="width:65px;">
+        </div>
+    </div>
+</div>
 <div id="homepage" class="settings_block widget_settings_block">
         <div class="switch_style">
                 <label class="switch">
@@ -398,7 +354,6 @@ $(document).ready(function(){
                 <div>
                     <b style="font-size:15px;float: left;">Homepage (front page)</b>
                     <div class='tooltip'>
-                            <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                                     <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                                     </g>
@@ -411,7 +366,6 @@ $(document).ready(function(){
             <div>
                 <div class="mode_style_home"><label id="home_widget_id_label" style="float:left;">Mode (Widget ID):</label>
                     <div class='tooltip'>
-                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                                 <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                                 </g>
@@ -421,7 +375,6 @@ $(document).ready(function(){
                 </div>
                 <div class="placement_style_home"><label id="home_placement_label" style="float:left;">Placement Name:</label>
                     <div class='tooltip'>
-                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                                 <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                                 </g>
@@ -441,7 +394,6 @@ $(document).ready(function(){
 
             <div class='heading_mid_home'><label style="float:left;">Position the widget immediately below the element:</label>
             <div class='tooltip'>
-                    <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                             <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                             </g>
@@ -459,7 +411,6 @@ $(document).ready(function(){
         <div class="home_occurrence">
                 <div class="mode_style_home_selector"><label id="home_location_string_label" style="float:left;">CSS selector :</label>
                     <div class='tooltip'>
-                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                                 <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                                 </g>
@@ -474,7 +425,6 @@ $(document).ready(function(){
                 </div>
                 <div class="placement_style_home_occurrence"><label id="home_occurrence_label" style="float:left;">Occurrence :</label>
                     <div class='tooltip'>
-                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
                                 <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                                 </g>
@@ -495,8 +445,6 @@ $(document).ready(function(){
             </div>
 </div>
 
-<!-- Homepage mid widget -->
-
 <div id="advanced-settings-main">
     <a id="show-advanced-settings">Show advanced settings >></a>
     <div class="change_button">
@@ -515,7 +463,6 @@ $(document).ready(function(){
                         <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
                     </g>
                 </svg>
-                <!-- <div id="arrow" ></div> -->
                 <div>Your SC web-push numeric account ID, as provided by Taboola.<br> 
                     This integration is only for sponsored web-push <br> <br>
                     The header script and service worker will only be injected if the publisher already has the taboola widget running on their site.
@@ -554,33 +501,101 @@ $(document).ready(function(){
         $detailsString = $userDetails->first_name." ".$userDetails->last_name;
     ?>
     <img src="https://logs-01.loggly.com/inputs/d14862f3-64ad-49ca-b28d-1b5d155414ec.gif?source=wp&type=settings&pub=<?=$logPublisher?>&user=<?=urlencode($detailsString)?>&email=<?=urlencode($userDetails->user_email)?>&url=<?=urlencode("//{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}")?>"/>
-    <!-- <form name="install_log" style="display:none;" method="post" action="http://logs-01.loggly.com/inputs/d14862f3-64ad-49ca-b28d-1b5d155414ec/tag/http/">
-        <input name="tim" type="hidden" value="<?=date("H:i:s.000")?>">
-        <input name="pub" type="hidden" value="<?=$logPublisher?>">
-        <input name="data" type="hideen" value="WORDPRESS_PLUGIN_INSTALL|<?="//{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}|{$detailsString}"?>">
-    </form> -->
 </div>
 
 <script>
-
-    // Set enabled/disabled appearance upon page load
-    // (Function is defined earlier on the page.)
     setEnabledDisabled('#below_article', document.getElementById("first_bc_enabled"));
     setEnabledDisabled('#mid_article', document.getElementById("mid_enabled"));
     setEnabledDisabled('#homepage', document.getElementById("home_enabled"));
     setEnabledDisabled('#web_push', document.getElementById("web_push_enabled"));
-
+    setEnabledDisabled('#category_widget',document.getElementById('category_enabled'));
 </script>
 
 <script>
+jQuery(document).ready(function($) {
+    let widgetCounter = $('#mid-article-widgets-container .mid-article-widget').length;
 
-    // Fadeouts for error/success messages
+    // Function to set the initial correct view for widgets
+    function initializeWidgetView() {
+        $('#mid-article-widgets-container .mid-widget-type-selector').each(function() {
+            var container = $(this).closest('.mid-article-widget');
+            var selectorInputContainer = container.find('.mid-css-selector-container');
+            
+            if ($(this).val() === 'Paragraph') {
+                selectorInputContainer.hide();
+            } else {
+                selectorInputContainer.show();
+            }
+        });
+    }
+
+    // Call the function on page load to fix the initial view
+    initializeWidgetView();
+
+    // Add a new mid-article widget section
+    $('#add-mid-widget').on('click', function() {
+        widgetCounter++;
+        var widgetHtml = `
+        <div class="mid-article-widget" style="border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 5px;">
+            <h4 style="font-size: 14px; font-weight: bold;">Mid-Article Widget #${widgetCounter}</h4>
+            <div style="display: flex; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; padding-right: 10px;">
+                    <label>Mode (Widget ID):</label>
+                    <input class="widefat" type="text" name="mid_widget_id[]" placeholder="thumbnails-mid1" />
+                </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <label>Placement Name:</label>
+                    <input class="widefat" type="text" name="mid_placement[]" placeholder="Mid Article Thumbnails" />
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; margin-top: 10px;">
+                <div style="flex: 1; min-width: 200px; padding-right: 10px;">
+                    <label>Position below:</label>
+                    <select class="widefat mid-widget-type-selector" name="mid_paragraph_ui_mode[]">
+                        <option value="Paragraph" selected>Paragraph</option>
+                        <option value="Other">Other (Custom)</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px; padding-right: 10px; display:none;" class="mid-css-selector-container">
+                    <label>CSS selector:</label>
+                    <input class="widefat" type="text" name="mid_location_string[]" value="p" />
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label>Paragraph/Element Number:</label>
+                    <input class="widefat" type="number" name="mid_location_string_occurrence[]" value="1" min="1" style="width:80px;">
+                </div>
+            </div>
+            <button type="button" class="button remove-mid-widget" style="margin-top: 10px;">Remove Widget</button>
+        </div>`;
+        $('#mid-article-widgets-container').append(widgetHtml);
+    });
+
+    // Remove a mid-article widget section
+    $('#mid-article-widgets-container').on('click', '.remove-mid-widget', function() {
+        $(this).closest('.mid-article-widget').remove();
+        $('#mid-article-widgets-container .mid-article-widget').each(function(index) {
+            $(this).find('h4').text(`Mid-Article Widget #${index + 1}`);
+        });
+        widgetCounter = $('#mid-article-widgets-container .mid-article-widget').length;
+    });
+
+    // Handle the show/hide for the CSS selector field on change
+    $('#mid-article-widgets-container').on('change', '.mid-widget-type-selector', function() {
+        var container = $(this).closest('.mid-article-widget');
+        var selectorInputContainer = container.find('.mid-css-selector-container');
+        var selectorInput = selectorInputContainer.find('input');
+
+        if ($(this).val() === 'Paragraph') {
+            selectorInputContainer.hide();
+            selectorInput.val('p'); 
+        } else {
+            selectorInputContainer.show();
+        }
+    });
+});
+</script>
+
+<script>
     setTimeout(function(){jQuery('.label-success').fadeOut()}, 5000);
     setTimeout(function(){jQuery('.label-error').fadeOut()}, 8000);
-
-    // PC
-    // window.onload = function(){
-    //     document.forms['install_log'].submit()
-    // }
-
 </script>

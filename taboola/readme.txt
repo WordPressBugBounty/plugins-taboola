@@ -59,8 +59,11 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-= 2.2.3 =
-* Small changes to the homepage product integration
+= 3.0.0 =
+* Added the Category page integration functionality
+* Allow to add Multiple Mid Article thumbnails.
+* Added the Homepage integration functionality for Feed
+* Minor Ui Change
 
 = 2.2.2 =
 * Added the web push integration functionality and enabled push notifications
