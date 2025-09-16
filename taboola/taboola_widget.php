@@ -3,7 +3,7 @@
  * Plugin Name:  Taboola
  * Plugin URI:   https://developers.taboola.com/web-integrations/docs/wordpress-plugin
  * Description:  Taboola
- * Version:      3.0      // ← version bumped
+ * Version:      3.0.0
  * Author:       Taboola
  */
 
