@@ -59,11 +59,17 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
-= 3.0.0 =
-* Added the Category page integration functionality
-* Allow to add Multiple Mid Article thumbnails.
+= 3.0.1 =
+* Bug Fix related to Mid Article
+  -"Loc_mid empty error"
+* Bug Fix related to WebPush
+* Minor Ui Modifications
+
+
+= 3.0 =
+* Added the Category integration functionality and Multiple Mid Article thumbnails.
 * Added the Homepage integration functionality for Feed
-* Minor Ui Change
+* Minor Ui Change 
 
 = 2.2.2 =
 * Added the web push integration functionality and enabled push notifications

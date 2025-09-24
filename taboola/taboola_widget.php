@@ -3,11 +3,11 @@
  * Plugin Name:  Taboola
  * Plugin URI:   https://developers.taboola.com/web-integrations/docs/wordpress-plugin
  * Description:  Taboola
- * Version:      3.0.0
+ * Version:      3.0.1
  * Author:       Taboola
  */
 
-define( 'TABOOLA_PLUGIN_VERSION', '3.0' );   // track every release
+define( 'TABOOLA_PLUGIN_VERSION', '3.0.1' );   // track every release
 define( 'TABOOLA_MIN_VER',        '3.0' );   // bump only when DB changes
 define( 'TABOOLA_DEBUG_MODE',      false );
 
@@ -49,7 +49,7 @@ SWE;
     /* ───────────────────────────  constructor  ─────────────────────────── */
     public function __construct() {
         global $wpdb;
-
+        //initialize plugin constant
         define( 'TaboolaWP', true );
 
         $this->_is_widget_on_page   = false;
@@ -82,9 +82,32 @@ SWE;
             add_action( 'admin_menu',        [ $this, 'admin_generate_menu' ] );
             add_filter( 'plugin_action_links',
                         [ $this, 'plugin_action_links' ], 10, 2 );
-        } elseif ( $this->settings ) {
+        } 
+        
+        
+        
+        
+        elseif ( $this->settings ) {
             /* loader & flush */
             add_action( 'wp_head',    [ $this, 'taboola_header_loader_inject' ] );
+                                if ( ! empty( $this->settings->publisher_id_push ) ) {
+                        add_action( 'wp_head', [ $this, 'taboola_webpush_loader_js' ] );
+
+                        $sw     = 'sw.js';
+                        $sw_path = ABSPATH . $sw;
+
+                        $content = file_exists( $sw_path ) ? file_get_contents( $sw_path ) : '';
+
+                        if ( strpos( $content, $this->tpl_sw ) === false ) {
+                            if ( ! is_writable( ABSPATH ) || ( file_exists( $sw_path ) && ! is_writable( $sw_path ) ) ) {
+                                return $this->notice( $this->msg_sw_error );
+                            }
+                            $content = $this->tpl_sw . PHP_EOL . $content;
+                            if ( file_put_contents( $sw_path, $content ) === false ) {
+                                return $this->notice( $this->msg_sw_error );
+                            }
+                        }
+                    }
             add_action( 'wp_footer',  [ $this, 'taboola_footer_loader_js'   ] );
 
             /* content widgets */
@@ -246,29 +269,34 @@ function plugin_action_links($links, $file) {
         }
 
         // return the head loader script
-        function taboola_header_loader_js() {
-            $head_string = "";
-
-            // Only adding the loader if a widget is going to be placed on the page.
+      function taboola_header_loader_js() {
             if ($this->is_widget_on_page()){
-                // PC - since these params will be inserted in 'loaderInjectionScript.js' via search and replace, 
-               // double brackets are used to ensure that each key is a unique string.
+                
+                // New logic to get all mid-article locations
+                $mid_locations_string = '';
+                if (!empty($this->settings->mid_widgets)) {
+                    $mid_widgets_array = json_decode($this->settings->mid_widgets, true);
+                    if (is_array($mid_widgets_array)) {
+                        $locations = array_column($mid_widgets_array, 'location_string');
+                        $mid_locations_string = implode(', ', $locations);
+                    }
+                }
+
             	$stringParams = array(
 		            '{{PUBLISHER_ID}}' => $this->settings->publisher_id,
 		            '{{PAGE_TYPE}}' => $this->get_page_type(),
 		            '{{WORDPRESS_VERSION}}' => get_bloginfo('version'),
                     '{{PHP_VERSION}}' => phpversion(),
 		            '{{PLUGIN_VERSION}}' => TABOOLA_PLUGIN_VERSION,
-                    '{{LOC_MID}}' => $this->settings->mid_location_string,
-                    '{{LOC_HOME}}' => $this->settings->home_location_string
+                    '{{LOC_MID}}' => $mid_locations_string,
+                    '{{LOC_HOME}}' => $this->settings->home_location_string ?? ''
 	            );
 
             	$scriptWrapper = new JavaScriptWrapper("loaderInjectionScript.js",$stringParams);
-                $head_string = $scriptWrapper->getScriptMarkupString();
+                return $scriptWrapper->getScriptMarkupString();
             }
-            return $head_string;
+            return "";
         }
-
 
         // This function is used for the hook action, injects the header content to the <head> tag.
         function taboola_header_loader_inject(){

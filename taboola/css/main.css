@@ -328,11 +328,16 @@ label:hover{
 .list_l1 p{
     font-size: 13px;
 }
+input.widefat,
+input.widefat.mid-widget-type-selector{
+    width: 66%;
+}
 
 input#publisher-id,
 input#first_bc_placement,
 input#mid_placement,
-input#home_placement{
+input#home_placement,
+input#category_placement{
     width: 36%;
 }
 
@@ -340,7 +345,9 @@ input#first_bc_widget_id,
 input#mid_widget_id,
 input#mid_location_string,
 input#home_widget_id,
-input#home_location_string{
+input#category_widget_id,
+input#home_location_string,
+input#category_location_string{
     width: 77%;
 }
 

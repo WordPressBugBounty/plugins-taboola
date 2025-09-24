@@ -238,9 +238,25 @@ $(document).ready(function(){
                         <input class="widefat" type="text" name="mid_placement[]" value="<?php echo esc_attr($widget->placement ?? ''); ?>" placeholder="Mid Article Thumbnails" />
                     </div>
                 </div>
+                <div class='heading_mid_home'><label style="float:left;">Position the widget immediately below the element:</label>
+            <div class='tooltip'>
+                    <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                            <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                            </g>
+                    </svg>
+                    <div>The widget will be placed <i>just beneath</i> this element.<br><br>
+                            To target an element, 2 pieces of information are needed:<br><br>
+                            i) A CSS selector - e.g. <i>p</i> (for paragraph).<br>
+                            ii) An occurrence - e.g. 1st, 2nd, 3rd, etc.<br><br>
+                            For more information, see the <a href="https://developers.taboola.com/web-integrations/docs/wordpress-plugin-managing-placements" target='_blank'>Taboola Dev Center</a>.
+                </div>
+            </div>
+        </div>
+
                 <div style="display: flex; flex-wrap: wrap; margin-top: 10px;">
                     <div style="flex: 1; min-width: 200px; padding-right: 10px;">
-                        <label>Position below:</label>
+                        <label>Position:</label>
                         <select class="widefat mid-widget-type-selector" name="mid_paragraph_ui_mode[]">
                             <option value="Paragraph" <?php echo !isset($widget->location_string) || $widget->location_string === 'p' ? 'selected' : ''; ?>>Paragraph</option>
                             <option value="Other" <?php echo isset($widget->location_string) && $widget->location_string !== 'p' ? 'selected' : ''; ?>>Other (Custom)</option>
@@ -286,28 +302,42 @@ $(document).ready(function(){
                    name="category_enabled"/>
             <span class="slider round"></span>
         </label>
-        <b style="font-size:15px;">Category (Section Page)</b>
-        <div class='tooltip'>
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-       viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
-    <g fill="none" fill-rule="evenodd">
-      <path fill="currentColor"
-        d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
-    </g>
-  </svg>
-  <div>Settings will be applied to all Category/Section archive pages on your site.</div>
-</div>
-
-    </div>
+                    <b style="font-size:15px;float: left;">Category (Section Page)</b>
+                    <div class='tooltip'>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                                    <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                                    </g>
+                            </svg>
+                            <div>Settings will be applied to all 'Category/Section' pages on your site.</div>
+                        </div>
+                     </div>
 
     <div class="label_below">
+    
         <div class="mode_style">
-            <label id="category_widget_id_label" style="float:left;">Mode&nbsp;(Widget&nbsp;ID):</label>
-        </div>
-        <div class="placement_style">
-            <label id="category_placement_label" style="float:left;">Placement&nbsp;Name:</label>
-        </div>
-    </div>
+            <label id="category_widget_id_label" style="float:left;">Mode (Widget ID):</label>
+                    <div class='tooltip'>
+                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                                <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                                </g>
+                         </svg>
+                        <div>Your <i>category</i> Mode (Widget ID), as provided by Taboola.</div>
+                    </div>
+                </div>
+    
+        <div class="placement_style"><label id="category_placement_label" style="float:left;">Placement Name:</label>
+                    <div class='tooltip'>
+                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                                <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                                </g>
+                         </svg>
+                        <div>Your <i>category</i> Placement Name, as provided by Taboola.</div>            
+                    </div>
+                </div>
+            </div>
+    
 
     <div class="input_below">
         <div class="widget_below">
@@ -322,12 +352,53 @@ $(document).ready(function(){
         </div>
     </div>
 
+    <div class='heading_mid_home'><label style="float:left;">Position the widget immediately below the element:</label>
+            <div class='tooltip'>
+                    <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                            <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                            </g>
+                    </svg>
+                    <div>The widget will be placed <i>just beneath</i> this element.<br><br>
+                            To target an element, 2 pieces of information are needed:<br><br>
+                            i) A CSS selector - e.g. <i>p</i> (for paragraph).<br>
+                            ii) An occurrence - e.g. 1st, 2nd, 3rd, etc.<br><br>
+                            For more information, see the <a href="https://developers.taboola.com/web-integrations/docs/wordpress-plugin-managing-placements" target='_blank'>Taboola Dev Center</a>.
+                </div>
+            </div>
+        </div>
+
     <div class="home_occurrence">
         <div class="mode_style_home_selector">
             <label id="category_location_string_label" style="float:left;">CSS selector&nbsp;:</label>
+             <div class='tooltip'>
+                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                                <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                                </g>
+                         </svg>
+                         <div>
+                            The element to target - e.g.:<br><br>
+                            <i>section</i> - to target a <i>section</i>.<br>
+                            <i>#my-id</i> - to target an <i>ID</i> of "my-id".<br>
+                            <i>.my-class</i> - to target a <i>class</i> of "my-class".
+                        </div>
+                    </div>
+            
         </div>
         <div class="placement_style_home_occurrence">
             <label id="category_occurrence_label" style="float:left;">Occurrence&nbsp;:</label>
+            <div class='tooltip'>
+                        <!-- <i class="fa fa-question-circle" aria-hidden="true"></i> -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="helpTooltip__icon___1XWGN">
+                                <g fill="none" fill-rule="evenodd"><path fill="currentColor" d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm-1 15.505v.99c0 .291.226.505.505.505h.99c.291 0 .505-.226.505-.505v-.99a.497.497 0 0 0-.505-.505h-.99a.497.497 0 0 0-.505.505zm4.07-6.255c.57-.57.93-1.37.93-2.25 0-2.21-1.79-4-4-4S8 6.79 8 9h2c0-1.1.9-2 2-2s2 .9 2 2c0 .55-.22 1.05-.59 1.41l-1.24 1.26C11.45 12.4 11 13.4 11 14.5v.5h2c0-1.5.45-2.1 1.17-2.83l.9-.92z"></path>
+                                </g>
+                         </svg>
+                         <div>For a <b>non-unique</b> selector - e.g. <i>section</i> - fill in the <b>occurrence</b> to target.<br><br>
+                        E.g. To target the <b>2nd</b> section, fill in <i>2</i>. <br><br>
+                        For a <b>unique</b> selector - e.g. <i>#my-id</i> - leave the default value of '1'.</div>           
+                    </div>
+                
         </div>
     </div>
 
