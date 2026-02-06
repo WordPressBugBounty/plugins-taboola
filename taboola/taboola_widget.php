@@ -3,11 +3,11 @@
  * Plugin Name:  Taboola
  * Plugin URI:   https://developers.taboola.com/web-integrations/docs/wordpress-plugin
  * Description:  Taboola
- * Version:      3.0.1
+ * Version:      3.0.2
  * Author:       Taboola
  */
 
-define( 'TABOOLA_PLUGIN_VERSION', '3.0.1' );   // track every release
+define( 'TABOOLA_PLUGIN_VERSION', '3.0.2' );   // track every release
 define( 'TABOOLA_MIN_VER',        '3.0' );   // bump only when DB changes
 define( 'TABOOLA_DEBUG_MODE',      false );
 
@@ -22,7 +22,9 @@ define( 'TABOOLA_CONTENT_FORMAT_HTML',    'html'    );
 
 include_once 'widget.php';
 require_once 'JavaScriptWrapper.php';
-require_once plugin_dir_path( __FILE__ ) . 'simple_html_dom.php';   // ← NEW
+if ( ! class_exists( 'simple_html_dom' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'simple_html_dom.php'; // ← NEW
+}
 
 if ( ! class_exists( 'TaboolaWP' ) ) {
 class TaboolaWP {
@@ -555,7 +557,9 @@ private function format_taboola_content_category( $arr ) {
                 // server side selector provided (see simple_html_dom selectors http://simplehtmldom.sourceforge.net/manual.htm)
                 // basically it's CSS selectors like in jQuery
                 } else{
-                    require_once('simple_html_dom.php');
+                    if ( ! class_exists( 'simple_html_dom' ) ) {
+                        require_once('simple_html_dom.php');
+                    }
 
                     $html_doc = str_get_html($content);
                     $target_location = $html_doc->find($location, ($occurrence) - 1);
@@ -616,8 +620,10 @@ private function format_taboola_content_category( $arr ) {
 
                     // server side selector provided (see simple_html_dom selectors http://simplehtmldom.sourceforge.net/manual.htm)
                     // basically it's CSS selectors like in jQuery
-                    } else{
+                   } else{
+                    if ( ! class_exists( 'simple_html_dom' ) ) {
                         require_once('simple_html_dom.php');
+                    }
 
                         $html_doc = str_get_html($content);
                         $target_location = $html_doc->find($location,($this->settings->home_location_string_occurrence)-1);

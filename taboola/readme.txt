@@ -59,6 +59,11 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 
+= 3.0.2 =
+* Bug Fix related to Simple HTML DOM
+  Error Message"Fatal error: Cannot redeclare function …"
+
+
 = 3.0.1 =
 * Bug Fix related to Mid Article
   -"Loc_mid empty error"
