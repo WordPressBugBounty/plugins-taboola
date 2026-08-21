@@ -1,12 +1,6 @@
-/*  ────────────────────────────────────────────────────────────────────────────
-    Utility helpers
-    ────────────────────────────────────────────────────────────────────────── */
-
 (function () {
   'use strict';
 
-  /* ----------  insertAfter  ------------------------------------------------ */
-  /* Fast path for “append” avoids creating a reference to nextSibling.       */
   function insertAfter(newNode, referenceNode) {
     const parent = referenceNode.parentNode;
     if (parent.lastChild === referenceNode) {
@@ -16,12 +10,8 @@
     }
   }
 
-  /* ----------  getElementByXPath  ----------------------------------------- */
-  /* 1) Use native evaluate where available (all evergreen browsers).         */
-  /* 2) Small, allocation-free fallback for very old IE engines.              */
   function getElementByXPath(xPath, doc = document) {
     if (doc.evaluate) {
-      // XPathResult.FIRST_ORDERED_NODE_TYPE = 9
       return doc.evaluate(
         xPath,
         doc,
@@ -31,8 +21,7 @@
       ).singleNodeValue;
     }
 
-    // Fallback (legacy IE) – minimal parsing, no .filter / regex loops
-    xPath = xPath.replace(/^\/+/, ''); // strip leading “/”
+    xPath = xPath.replace(/^\/+/, '');
     const steps = xPath.split('/');
     let current = doc;
 
@@ -40,15 +29,12 @@
       const match = /([^\[\]]+)(?:\[(\d+)\])?/.exec(steps[i]);
       if (!match) return null;
       const [, tag, idx] = match;
-      const pos = idx ? (idx - 1) : 0; // XPath indices are 1-based
+      const pos = idx ? (idx - 1) : 0;
       current = current.getElementsByTagName(tag)[pos] || null;
     }
     return current;
   }
 
-  /* ----------  Array.prototype.filter polyfill (unchanged API) ------------ */
-  /* MIT – kept for <= IE8; tightened slightly for speed/readability.         */
-  /* eslint-disable-next-line no-extend-native */
   if (!Array.prototype.filter) {
     Array.prototype.filter = function (callback, thisArg) {
       if (typeof callback !== 'function') throw new TypeError();
@@ -63,8 +49,6 @@
     };
   }
 
-  /* ----------  Injection helpers  ----------------------------------------- */
-
   function injectWidgetByXpath(xpath) {
     const anchor =
       getElementByXPath(xpath) || document.getElementById('tbdefault');
@@ -76,7 +60,6 @@
     if (markerNode && markerNode.parentNode) innerInject(markerNode.parentNode);
   }
 
-  /* One reflow: build everything in a fragment, then insert once.           */
   function innerInject(node) {
     if (!node) return;
 
@@ -84,7 +67,6 @@
     const container = document.createElement('span');
     const script = document.createElement('script');
 
-    /* Keep single quotes – some minifiers mangle this otherwise.            */
     container.insertAdjacentHTML('beforeend', '{{HTML}}');
     script.text = "{{SCRIPT}}";
 
@@ -93,7 +75,6 @@
     insertAfter(fragment, node);
   }
 
-  /* ----------  Export to global scope (names unchanged) ------------------- */
   window.insertAfter = insertAfter;
   window.getElementByXPath = getElementByXPath;
   window.injectWidgetByXpath = injectWidgetByXpath;

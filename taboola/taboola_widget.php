@@ -3,11 +3,11 @@
  * Plugin Name:  Taboola
  * Plugin URI:   https://developers.taboola.com/web-integrations/docs/wordpress-plugin
  * Description:  Taboola
- * Version:      3.0.2
+ * Version:      3.1.0
  * Author:       Taboola
  */
 
-define( 'TABOOLA_PLUGIN_VERSION', '3.0.2' );   // track every release
+define( 'TABOOLA_PLUGIN_VERSION', '3.1.0' );   // track every release
 define( 'TABOOLA_MIN_VER',        '3.0' );   // bump only when DB changes
 define( 'TABOOLA_DEBUG_MODE',      false );
 
@@ -504,6 +504,29 @@ private function format_taboola_content_category( $arr ) {
         '</script>',
     ]);
 }
+        /* ------------------------------------------------------------------
+         * wpautop() hardening for anything injected through the_content.
+         *
+         * wpautop() pads block-level tags with blank lines, then splits the
+         * content on blank lines and wraps each chunk in <p>. Its <script>
+         * protection only runs after that split, so two things tear an injected
+         * <script> apart and spill its tail onto the page as reader-visible text:
+         *   1. a blank line anywhere in the script body, and
+         *   2. a block-level tag (e.g. <div>) sitting inside a JS string literal.
+         * Both have to be neutralised; fixing only one still breaks.
+         * ------------------------------------------------------------------*/
+
+        // Hide markup from wpautop's block-tag scan. \x3C decodes back to "<"
+        // when the surrounding JS string literal is evaluated.
+        private function js_escape_markup($markup){
+            return str_replace('<', '\x3C', (string) $markup);
+        }
+
+        // Collapse blank lines so wpautop has no paragraph boundary to split on.
+        private function wpautop_safe_script($script){
+            return preg_replace('/(\R[ \t]*){2,}/', "\n", (string) $script);
+        }
+
         // Below-article widget
         // Do the actual logic of choosing where to place the taboola content.
         function embed_taboola_content_location($content, $taboola_content){
@@ -513,11 +536,11 @@ private function format_taboola_content_category( $arr ) {
             if ($this->settings->out_of_content_enabled){
 
 	            $scriptWrapper = new JavaScriptWrapper("js_inject.min.js",array(
-			            "{{HTML}}" => $this->format_taboola_content($taboola_content,TABOOLA_CONTENT_FORMAT_HTML),
-			            "{{SCRIPT}}" => $this->format_taboola_content($taboola_content,TABOOLA_CONTENT_FORMAT_SCRIPT))
+			            "{{HTML}}" => $this->js_escape_markup($this->format_taboola_content($taboola_content,TABOOLA_CONTENT_FORMAT_HTML)),
+			            "{{SCRIPT}}" => $this->js_escape_markup($this->format_taboola_content($taboola_content,TABOOLA_CONTENT_FORMAT_SCRIPT)))
 	            );
 	            $scriptWrapper->appendScript("injectWidgetByMarker('tbmarker');");
-            	$content = $content."<span id='tbmarker'></span><script type='text/javascript'>".$scriptWrapper."</script>";
+            	$content = $content."<span id='tbmarker'></span><script type='text/javascript'>".$this->wpautop_safe_script($scriptWrapper)."</script>";
 	            $do_default = false;
             }
 
@@ -545,11 +568,11 @@ private function format_taboola_content_category( $arr ) {
 
                         $xpath = substr($location,strlen(TABOOLA_JS_INDICATOR));
                         $scriptWrapper = new JavaScriptWrapper("js_inject.min.js",array(
-                            "{{HTML}}" => $this->format_taboola_content_mid($taboola_content_mid,TABOOLA_CONTENT_FORMAT_HTML),
-                            "{{SCRIPT}}" => $this->format_taboola_content_mid($taboola_content_mid,TABOOLA_CONTENT_FORMAT_SCRIPT))
+                            "{{HTML}}" => $this->js_escape_markup($this->format_taboola_content_mid($taboola_content_mid,TABOOLA_CONTENT_FORMAT_HTML)),
+                            "{{SCRIPT}}" => $this->js_escape_markup($this->format_taboola_content_mid($taboola_content_mid,TABOOLA_CONTENT_FORMAT_SCRIPT)))
                         );
                         $scriptWrapper->appendScript("injectWidgetByXpath('".$xpath."');");
-                        $content = $content."<span id='tbdefault'></span><script type='text/javascript'>".$scriptWrapper."</script>";
+                        $content = $content."<span id='tbdefault'></span><script type='text/javascript'>".$this->wpautop_safe_script($scriptWrapper)."</script>";
 
                         $do_default = false;
                     }
@@ -609,11 +632,11 @@ private function format_taboola_content_category( $arr ) {
 
                             $xpath = substr($location,strlen(TABOOLA_JS_INDICATOR));
                             $scriptWrapper = new JavaScriptWrapper("js_inject.min.js",array(
-                                "{{HTML}}" => $this->format_taboola_content_home($taboola_content_home,TABOOLA_CONTENT_FORMAT_HTML),
-                                "{{SCRIPT}}" => $this->format_taboola_content_home($taboola_content_home,TABOOLA_CONTENT_FORMAT_SCRIPT))
+                                "{{HTML}}" => $this->js_escape_markup($this->format_taboola_content_home($taboola_content_home,TABOOLA_CONTENT_FORMAT_HTML)),
+                                "{{SCRIPT}}" => $this->js_escape_markup($this->format_taboola_content_home($taboola_content_home,TABOOLA_CONTENT_FORMAT_SCRIPT)))
                             );
                             $scriptWrapper->appendScript("injectWidgetByXpath('".$xpath."');");
-                            $content = $content."<span id='tbdefault'></span><script type='text/javascript'>".$scriptWrapper."</script>";
+                            $content = $content."<span id='tbdefault'></span><script type='text/javascript'>".$this->wpautop_safe_script($scriptWrapper)."</script>";
 
                             $do_default = false;
                         }
@@ -652,10 +675,17 @@ private function format_taboola_content_category( $arr ) {
             add_menu_page(__('Taboola','taboola_widget'), __('Taboola','taboola_widget'), 'manage_options', 'taboola_widget', array(&$this, 'admin_taboola_settings'), $this->plugin_url.'img/taboola_icon.png', 110);
         }
 
+        // Empty numeric inputs must reach MySQL as NULL, not '', or strict mode
+        // rejects the whole row.
+        private function nullable_int($value){
+            return (isset($value) && trim((string) $value) !== '') ? (int) $value : null;
+        }
+
         function admin_taboola_settings(){
             global $wpdb;
             $settings = $wpdb->get_row("select * from ".$wpdb->prefix."_taboola_settings limit 1");
             $taboola_errors = array();
+            $taboola_save_error = '';
             if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
                 if(trim(strip_tags($_POST['publisher_id'])) == ''){ 
@@ -739,31 +769,36 @@ private function format_taboola_content_category( $arr ) {
                     }
                     $mid_widgets_json = json_encode($mid_widgets_data);
 
+                    /* $wpdb formats every value as %s unless told otherwise, so a PHP
+                       false or an empty string reaches MySQL as ''. Under
+                       STRICT_TRANS_TABLES (the MySQL 8 default) '' is rejected for the
+                       TINYINT/INT columns and the whole write is refused. Send real
+                       integers for the flags and NULL for empty numeric fields. */
                     $data = array(
                         "publisher_id" => trim($_POST['publisher_id']),
 
-                        "web_push_enabled" => isset($_POST['web_push_enabled']) ? true : false,
-                        "publisher_id_push" => !empty($_POST['publisher_id_push']) ? trim($_POST['publisher_id_push']) : '',
+                        "web_push_enabled" => isset($_POST['web_push_enabled']) ? 1 : 0,
+                        "publisher_id_push" => $this->nullable_int($_POST['publisher_id_push'] ?? null),
 
-                        "first_bc_enabled" => isset($_POST['first_bc_enabled']) ? true : false,
+                        "first_bc_enabled" => isset($_POST['first_bc_enabled']) ? 1 : 0,
                         "first_bc_widget_id" => !empty($_POST['first_bc_widget_id']) ? trim($_POST['first_bc_widget_id']) : '',
                         "first_bc_placement" => !empty($_POST['first_bc_placement']) ? trim($_POST['first_bc_placement']) : '',
 
-                        "out_of_content_enabled" => isset($_POST['out_of_content_enabled']) ? true : false,
+                        "out_of_content_enabled" => isset($_POST['out_of_content_enabled']) ? 1 : 0,
 
-                        "mid_enabled" => isset($_POST['mid_enabled']) ? true : false,
+                        "mid_enabled" => isset($_POST['mid_enabled']) ? 1 : 0,
                         "mid_widgets" => $mid_widgets_json,
                         
-                        "home_enabled" => isset($_POST['home_enabled']) ? true : false,
+                        "home_enabled" => isset($_POST['home_enabled']) ? 1 : 0,
                         "home_widget_id" => !empty($_POST['home_widget_id']) ? trim($_POST['home_widget_id']) : '',
                         "home_placement" => !empty($_POST['home_placement']) ? trim($_POST['home_placement']) : '',
 
-                        "home_location_string_occurrence" => !empty($_POST['home_location_string_occurrence']) ? $_POST['home_location_string_occurrence'] : '',
+                        "home_location_string_occurrence" => $this->nullable_int($_POST['home_location_string_occurrence'] ?? null),
                         "home_location_string" => !empty($_POST['home_location_string']) ? trim($_POST['home_location_string']) : '',
-                        "category_enabled"                    => isset($_POST['category_enabled']) ? true  : false,
+                        "category_enabled"                    => isset($_POST['category_enabled']) ? 1 : 0,
                         "category_widget_id"                  => !empty($_POST['category_widget_id']) ? trim($_POST['category_widget_id']) : '',
                         "category_placement"                  => !empty($_POST['category_placement']) ? trim($_POST['category_placement']) : '',
-                        "category_location_string_occurrence" => !empty($_POST['category_location_string_occurrence']) ? $_POST['category_location_string_occurrence'] : '',
+                        "category_location_string_occurrence" => $this->nullable_int($_POST['category_location_string_occurrence'] ?? null),
                         "category_location_string"            => !empty($_POST['category_location_string']) ? trim($_POST['category_location_string']) : '',
 
                     );
@@ -776,10 +811,18 @@ private function format_taboola_content_category( $arr ) {
 
                     if ($is_valid_nonce) {
                         if($settings == NULL){
-                            $wpdb->insert($this->tbl_taboola_settings, $data);
+                            $saved = $wpdb->insert($this->tbl_taboola_settings, $data);
                         } else {
-                            $wpdb->update($this->tbl_taboola_settings, $data, array('id' => $settings->id));
+                            $saved = $wpdb->update($this->tbl_taboola_settings, $data, array('id' => $settings->id));
                         }
+
+                        // update() returns 0 when nothing changed; only false is a failure.
+                        if ($saved === false) {
+                            $taboola_save_error = "The database rejected the write, so your changes were not saved: "
+                                . ($wpdb->last_error !== '' ? $wpdb->last_error : 'unknown database error');
+                        }
+                    } else {
+                        $taboola_save_error = "Security check failed - the settings page had been open too long. Reload it and apply your changes again.";
                     }
                 }
                 $settings = $wpdb->get_row("select * from ".$wpdb->prefix."_taboola_settings limit 1");

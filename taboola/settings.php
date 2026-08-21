@@ -21,10 +21,18 @@
     </h2>
 
 <?php
-    if($_SERVER['REQUEST_METHOD'] == 'POST' && count($taboola_errors) == 0){
+    if($_SERVER['REQUEST_METHOD'] == 'POST' && count($taboola_errors) == 0 && $taboola_save_error == ''){
         echo "<div class='label-success'>";
         echo "<h3 style='color:green;'>Changes applied!</h3>";
         echo "<span>Verify the new changes by browsing to your site.</span>";
+        echo "</div>";
+    }
+
+    if($taboola_save_error != ''){
+        echo "<div class='label-error'>";
+            echo "<h3 style='color:red;'>Settings were not saved</h3>";
+            echo "<p>".esc_html($taboola_save_error)."</p>";
+            echo "<p><b>All values</b> have been reverted to the last successful save.</p>";
         echo "</div>";
     }
     

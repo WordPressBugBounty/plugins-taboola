@@ -2,8 +2,8 @@
 Contributors: Taboola
 Tags: content recommendations, taboola, discovery,ad networks, ads, advertising, affiliate, content ads, contextual ads, Contextual Advertising, engagement, income, monetization, monetize, pay per click, popular posts, posts, ppc, related, Related Content, related post thumbnails, related posts, relevant ads, revenue, similar posts, text ads, widgets,recommendations,thumbnails, traffic, widget
 Requires at least: 5.2
-Tested up to: 6.8.0
-Stable tag: trunk
+Tested up to: 7.1
+Stable tag: 3.1.0
 License: GNU General Public License v3.0
 License URI: http://www.gnu.org/licenses/gpl-3.0.txt
 
@@ -18,7 +18,7 @@ Using Taboola’s mix of sponsored and editorial content, you can generate reven
 
 = Requirements =
 * PHP 5.x, 7.x or 8.x
-* WordPress 5.x or 6.x
+* WordPress 5.2 or higher (tested up to 7.1)
 
 = Installation Process =
 * Log into the WordPress admin for your site
@@ -58,6 +58,12 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 1. **Taboola's settings page**
 
 == Changelog ==
+
+= 3.1.0 =
+* Improved reliability: Ads and widgets should continue to load even when certain browsers or privacy settings block some services.
+* Fixed content display issues: Content added within or below articles will now display correctly instead of appearing as plain text.
+* Improved settings: Plugin settings will now save properly. If there’s a problem saving them, you’ll see a clear error message instead of the changes being lost.
+
 
 = 3.0.2 =
 * Bug Fix related to Simple HTML DOM
